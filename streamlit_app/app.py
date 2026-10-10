@@ -28,13 +28,26 @@ def append_csv(linha):
         return False
 
 
+# ---------- Inicialização do session_state ----------
 if "pacientes" not in st.session_state:
     st.session_state.pacientes = pd.DataFrame(columns=COLUNAS)
 
+if "reset_flag" not in st.session_state:
+    st.session_state.reset_flag = False
 
-# ---------- Campos que disparam rerun (fora do form) ----------
-# idade e convenio precisam ficar FORA do form para que os campos
-# condicionais (responsável / carteirinha) apareçam em tempo real.
+if "mensagem_sucesso" not in st.session_state:
+    st.session_state.mensagem_sucesso = None
+
+# IMPORTANTE: este bloco precisa rodar ANTES dos widgets serem criados.
+# Como estamos no topo do script e os widgets são criados abaixo,
+# podemos redefinir os valores com segurança.
+if st.session_state.reset_flag:
+    st.session_state.idade_input = 0
+    st.session_state.convenio_input = "Particular"
+    st.session_state.reset_flag = False
+
+
+# ---------- Campos fora do form (disparam rerun) ----------
 st.subheader("Dados principais")
 
 idade = st.number_input(
@@ -57,7 +70,6 @@ with st.form("cadastro", clear_on_submit=True):
     nome = st.text_input("Nome do paciente")
     telefone = st.text_input("Telefone do paciente")
 
-    # Campos condicionais: menor de 18 anos
     if menor:
         st.info("Paciente menor de 18 anos: informe os dados do responsável.")
         responsavel_nome = st.text_input("Nome do responsável")
@@ -66,7 +78,6 @@ with st.form("cadastro", clear_on_submit=True):
         responsavel_nome = ""
         responsavel_telefone = ""
 
-    # Campo condicional: convênio diferente de Particular
     if precisa_carteirinha:
         st.info(f"Convênio “{convenio}”: informe o número da carteirinha.")
         carteirinha = st.text_input("Número da carteirinha do plano")
@@ -117,16 +128,14 @@ if enviado:
         )
         append_csv(nova_linha)
 
-        # Guarda a mensagem e reseta os campos externos ao form,
-        # depois força rerun para esconder os campos condicionais.
+        # Sinaliza o reset para o próximo rerun
+        st.session_state.reset_flag = True
         st.session_state.mensagem_sucesso = "Paciente cadastrado!"
-        st.session_state.idade_input = 0
-        st.session_state.convenio_input = "Particular"
         st.rerun()
 
 
 # ---------- Feedback e tabela ----------
-if st.session_state.get("mensagem_sucesso"):
+if st.session_state.mensagem_sucesso:
     st.success(st.session_state.mensagem_sucesso)
     st.session_state.mensagem_sucesso = None
 
