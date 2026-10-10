@@ -66,6 +66,9 @@ with gr.Blocks(title="Cadastro de Pacientes") as demo:
         fn=cadastrar_paciente,
         inputs=[nome, idade, convenio, prioridade, motivo],
         outputs=[saida_msg, tabela],
+    ).then(
+        fn=lambda: ("", None, "Particular", 1, ""),
+        outputs=[nome, idade, convenio, prioridade, motivo],
     )
 
     demo.load(fn=ler_ultimos, outputs=tabela)
